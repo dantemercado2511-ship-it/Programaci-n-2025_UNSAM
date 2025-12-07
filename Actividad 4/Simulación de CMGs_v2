@@ -1,0 +1,201 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+#  Clase CMG
+class CMG:
+    """Controlador de Momento Giroscópico (CMG)."""
+
+    def __init__(self, h, angulo):
+        self.h = h
+        self.angulo = angulo
+
+#-----------------------------------------------------------------------------------------
+#  Clase Microsatelite
+class Microsatelite:
+    """Modelo simplificado de microsatélite controlado por CMGs."""
+
+    def __init__(self, matriz_inercia, velocidad_ang, orientacion_inicial, cmgs, debug):
+        self.matriz_inercia = np.array(matriz_inercia)
+        self.velocidad_ang = np.array(velocidad_ang)
+        self.orientacion = np.array(orientacion_inicial)
+        self.cmgs = cmgs
+        self.orientacion_anterior = np.array(orientacion_inicial)
+        self.error_integral = np.zeros(3)
+        self.debug = debug
+
+#-----------------------------------------------------------------------------------------
+    # Escala dinámica de las ganancias
+    def Calcular_Escala_Orientacion(self, orientacion_inicial, orientacion_final):
+        diferencia = np.linalg.norm(orientacion_final - orientacion_inicial)
+        escala = max(1.0, diferencia * 2.0)
+
+        if self.debug:
+            print(f"[DEBUG] Escala orientación: {escala:.3f}")
+
+        return escala
+
+#-----------------------------------------------------------------------------------------
+    # Momento angular total (corregido)
+def Calcular_Momento_Angular_Total(self):
+
+        hT_x = -self.cmgs[0].h * np.sin(self.cmgs[0].angulo) \
+               + self.cmgs[1].h * np.sin(self.cmgs[1].angulo) \
+               + self.cmgs[4].h * np.cos(self.cmgs[4].angulo) \
+               - self.cmgs[5].h * np.cos(self.cmgs[5].angulo)
+
+        hT_y = self.cmgs[0].h * np.cos(self.cmgs[0].angulo) \
+               - self.cmgs[1].h * np.cos(self.cmgs[1].angulo) \
+               - self.cmgs[2].h * np.sin(self.cmgs[2].angulo) \
+               + self.cmgs[3].h * np.cos(self.cmgs[3].angulo)
+
+        hT_z = self.cmgs[2].h * np.cos(self.cmgs[2].angulo) \
+               + self.cmgs[3].h * np.cos(self.cmgs[3].angulo) \
+               - self.cmgs[4].h * np.sin(self.cmgs[4].angulo) \
+               + self.cmgs[5].h * np.cos(self.cmgs[5].angulo)
+
+        hT = np.array([hT_x, hT_y, hT_z])
+
+        if self.debug:
+            print(f"[DEBUG] Momento angular total: {hT}")
+
+        return hT
+
+#-----------------------------------------------------------------------------------------
+    # Matriz B
+ def Calcular_B(self):
+        B = np.zeros((3, 6))
+
+        B[0, 0] = -self.cmgs[0].h * np.cos(self.cmgs[0].angulo)
+        B[0, 1] = -self.cmgs[1].h * np.cos(self.cmgs[1].angulo)
+        B[0, 4] = -self.cmgs[4].h * np.cos(self.cmgs[4].angulo)
+        B[0, 5] = -self.cmgs[5].h * np.cos(self.cmgs[5].angulo)
+
+        B[1, 0] = -self.cmgs[0].h * np.cos(self.cmgs[0].angulo)
+        B[1, 1] = -self.cmgs[1].h * np.cos(self.cmgs[1].angulo)
+        B[1, 2] = -self.cmgs[2].h * np.cos(self.cmgs[2].angulo)
+        B[1, 3] = self.cmgs[3].h * np.cos(self.cmgs[3].angulo)
+
+        B[2, 2] = -self.cmgs[2].h * np.cos(self.cmgs[2].angulo)
+        B[2, 3] = -self.cmgs[3].h * np.cos(self.cmgs[3].angulo)
+        B[2, 4] = -self.cmgs[4].h * np.cos(self.cmgs[4].angulo)
+        B[2, 5] = -self.cmgs[5].h * np.cos(self.cmgs[5].angulo)
+
+        return B
+
+#-----------------------------------------------------------------------------------------
+    # Tasa de cambio del momento angular
+    def Calcular_Tasa_Cambio_Momento_Angular(self, d_angulos_gimbal):
+        B = self.Calcular_B()
+        return B @ d_angulos_gimbal
+
+#-----------------------------------------------------------------------------------------
+    # Torque de control
+    def Calcular_Torque_Control(self, d_angulos_gimbal):
+        hT = self.Calcular_Momento_Angular_Total()
+        prod_Cruz = np.cross(self.velocidad_ang, hT)
+        d_hT = self.Calcular_Tasa_Cambio_Momento_Angular(d_angulos_gimbal)
+        return -d_hT - prod_Cruz
+
+#-----------------------------------------------------------------------------------------
+    # Error de orientación
+ def Calcular_Error_Orientacion(self, orientacion_final):
+        return orientacion_final - self.orientacion
+
+#-----------------------------------------------------------------------------------------
+    # Control PD completo
+ def Control_PD(self, orientacion_final):
+
+        error = self.Calcular_Error_Orientacion(orientacion_final)
+        escala = self.Calcular_Escala_Orientacion(self.orientacion, orientacion_final)
+
+        k_p = 3.0 * escala
+        k_d = 0.2 * escala
+        k_i = 0.1 * escala
+
+        self.error_integral += error * 0.1
+        error_derivada = error - self.orientacion_anterior
+
+        torque = k_p * error + k_d * error_derivada + k_i * self.error_integral
+
+        if self.debug:
+            print(f"[DEBUG] Torque aplicado: {torque}")
+
+        self.Actualizar_Orientacion(torque, 0.2)
+        self.orientacion_anterior = self.orientacion.copy()
+
+    # Normalización
+    def Normalizar_Orientacion(self):
+        self.orientacion /= np.linalg.norm(self.orientacion)
+
+
+    # Actualización dinámica
+   def Actualizar_Orientacion(self, u, dt):
+        d_vel = np.linalg.inv(self.matriz_inercia) @ (
+            u - np.cross(self.velocidad_ang, self.matriz_inercia @ self.velocidad_ang)
+        )
+        self.velocidad_ang += d_vel * dt
+        self.orientacion += self.velocidad_ang * dt
+
+#-----------------------------------------------------------------------------------------
+# Configuración inicial
+
+
+matriz_inercia = [[1.0, 0.0, 0.0],
+                  [0.0, 1.5, 0.0],
+                  [0.0, 0.0, 2.0]]
+
+velocidad_ang = [0.01, 0.02, 0.03]
+orientacion_inicial = [1.0, 0.0, 0.0]
+
+hx, hy, hz = 0.1, 0.2, 0.3
+ang_x, ang_y, ang_z = 0.1, 0.2, 0.3
+
+cmgs = [
+    CMG(hx, ang_x), CMG(-hx, -ang_x),
+    CMG(hy, ang_y), CMG(-hy, -ang_y),
+    CMG(hz, ang_z), CMG(-hz, -ang_z)
+]
+
+microsatelite = Microsatelite(matriz_inercia, velocidad_ang, orientacion_inicial, cmgs, debug=True)
+
+orientacion_final = np.array([0.0, 1.0, 1.0])
+orientacion_final /= np.linalg.norm(orientacion_final)
+
+orientaciones = []
+
+#-----------------------------------------------------------------------------------------
+# Animación
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="3d")
+
+def Actualizar(frame):
+
+    microsatelite.Control_PD(orientacion_final)
+    microsatelite.Normalizar_Orientacion()
+
+    orientaciones.append(microsatelite.orientacion.copy())
+
+    ax.cla()
+    ax.quiver(
+        0, 0, 0,
+        microsatelite.orientacion[0],
+        microsatelite.orientacion[1],
+        microsatelite.orientacion[2],
+        length=0.8,
+        color="purple",
+        linewidth=2
+    )
+
+    ax.set_xlim([-1, 1])
+    ax.set_ylim([-1, 1])
+    ax.set_zlim([-1, 1])
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+
+from IPython.display import HTML
+
+ani = FuncAnimation(fig, Actualizar, frames=200, interval=50)
+
+HTML(ani.to_jshtml())
