@@ -1,0 +1,8 @@
+4.a
+¿Se puede usar recursión?
+
+Sí, porque la eliminación reduce el problema circular a uno más pequeño con la misma estructura.
+
+Sin embargo,para números muy grandes, la recursión puede producir desbordes.
+
+Para cantidades pequeñas (como 40) funciona bien. 
