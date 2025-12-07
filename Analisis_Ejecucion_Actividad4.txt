@@ -1,0 +1,22 @@
+Actividad 4 – Punto 3.1
+Análisis de ejecución
+
+Se identifican dos malas prácticas generales que afectan la ejecución y mantenibilidad del código:
+
+1) Uso de nombres incorrectos (typos) en atributos → el código falla en tiempo de ejecución
+En el método Calcular_Momento_Angular_Total() aparecen atributos que no existen, por ejemplo:
+self.cmgs[0].aangulo
+El atributo correcto definido en la clase CMG es:
+self.cmgs[0].angulo
+Esto provoca errores AttributeError durante la ejecución e impide que la simulación funcione.
+Corrección:
+Reemplazar todas las referencias incorrectas por 'angulo' y revisar nombres en todo el script.
+
+2) Uso de variables globales para manejar el estado del sistema
+El script utiliza variables globales como 'orientaciones' y 'debug', junto con funciones que dependen de ellas mediante 'global'.
+Esto dificulta las pruebas, introduce efectos secundarios y vuelve el código suceptible de generar errores.
+Corrección:
+Mover estos estados al interior de las clases (ej.: Microsatelite.historial_orientacion) o pasarlos explícitamente como parámetros, evitando el uso de 'global'.
+
+Conclusión
+Los dos problemas detectados —errores tipográficos en atributos y uso innecesario de estado global— afectan directamente la ejecución del programa y deben corregirse para obtener una versión estable.
