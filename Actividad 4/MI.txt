@@ -1,0 +1,5 @@
+Métrica MI
+
+Código: "Simulación de CMGs.py"
+
+A (53.97)
