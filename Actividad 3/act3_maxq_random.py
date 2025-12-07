@@ -33,7 +33,7 @@ posiciones"""
 def imprimir_estadisticas(maximos, posiciones):
    
 """Imprime media y desvío estándar para máximos y posiciones"""
-    print("\n===== RESULTADOS DE 300 SIMULACIONES =====")
+    print("\nRESULTADOS DE 300 SIMULACIONES")
     print(f"Media del valor máximo:          {statistics.mean(maximos):.4f}")
     print(f"Desvío estándar del máximo:      {statistics.stdev(maximos):.4f}")
     print(f"Media de la posición del máximo: {statistics.mean(posiciones):.2f}")
