@@ -1,0 +1,16 @@
+¿Qué es Insertion Sort?
+
+Insertion Sort es un algoritmo de ordenamiento que construye la lista ordenada insertando, uno por uno, los elementos en la posición correcta dentro de una parte del arreglo que ya está ordenada.
+
+¿En qué se diferencia de Selection Sort?
+Selection Sort
+
+*Recorre toda la lista.
+
+*A cada paso busca el mínimo en la parte no ordenada.
+
+*Luego intercambia ese mínimo con la posición actual.
+
+*Realiza siempre n pasos externos + búsquedas lineales completas.
+
+*Realiza muchos swaps pero pocas comparaciones adicionales.
